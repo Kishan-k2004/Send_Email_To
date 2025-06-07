@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Send OTP Email</title>
+</head>
+<body>
+  <h2>Send OTP</h2>
+  <input type="email" id="email" placeholder="Enter your email" required />
+  <button onclick="sendEmail()">Send OTP</button>
+
+  <p id="result"></p>
+
+  <script>
+    function generateOTP() {
+      return Math.floor(100000 + Math.random() * 900000);
+    }
+
+    async function sendEmail() {
+      const email = document.getElementById("email").value;
+      const otp = generateOTP();
+
+      const response = await fetch("http://localhost:5000/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, otp }),
+      });
+
+      const result = await response.json();
+      document.getElementById("result").innerText = result.message;
+    }
+  </script>
+</body>
+</html>
