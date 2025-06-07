@@ -1,85 +1,46 @@
-let storedOTPs = {}; // In-memory OTP store (replace with DB/Redis in production)
+const sdk = require("node-appwrite");
+const nodemailer = require("nodemailer");
 
-export default async ({ req, res, log, env }) => {
-  const nodemailer = await import('nodemailer');
+module.exports = async function (req, res) {
+  const body = JSON.parse(req.bodyRaw);
+  const { email, otp, type } = body;
 
-  if (req.method === 'POST' && req.url === '/send-otp') {
-    try {
-      const body = JSON.parse(req.body || '{}');
-      const { email } = body;
+  if (!email || !type) {
+    return res.json({ success: false, message: "Missing required fields" });
+  }
 
-      if (!email) {
-        return res.json({ success: false, message: 'Email is required' }, 400);
-      }
+  if (type === "send-otp") {
+    const generatedOtp = Math.floor(100000 + Math.random() * 900000);
 
-      // Generate 6-digit OTP
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Save to temporary memory or DB - for now we'll use a simple object
+    global.otpStore = global.otpStore || {};
+    global.otpStore[email] = generatedOtp;
 
-      // Store OTP with timestamp
-      storedOTPs[email] = { otp, createdAt: Date.now() };
+    const transporter = nodemailer.createTransport({
+      service: "Outlook",
+      auth: {
+        user: process.env.OUTLOOK_EMAIL,
+        pass: process.env.OUTLOOK_PASS,
+      },
+    });
 
-      // Create transporter for Outlook
-      const transporter = nodemailer.createTransport({
-        service: 'Outlook',
-        auth: {
-          user: env.OUTLOOK_EMAIL,
-          pass: env.OUTLOOK_PASS
-        }
-      });
+    await transporter.sendMail({
+      from: process.env.OUTLOOK_EMAIL,
+      to: email,
+      subject: "Welcome! Here's your OTP",
+      html: `<h3>Your OTP is: ${generatedOtp}</h3><p>Welcome to our service!</p>`,
+    });
 
-      // Send email
-      await transporter.sendMail({
-        from: env.OUTLOOK_EMAIL,
-        to: email,
-        subject: 'Welcome! Your OTP Code',
-        html: `
-          <h2>Welcome to Our App 🎉</h2>
-          <p>Your OTP is: <strong>${otp}</strong></p>
-          <p>This OTP will expire in 5 minutes.</p>
-        `
-      });
+    return res.json({ success: true, message: "OTP sent!" });
+  }
 
-      return res.json({ success: true, message: 'OTP sent successfully' });
-    } catch (err) {
-      log(err);
-      return res.json({ success: false, message: 'Failed to send OTP' }, 500);
+  if (type === "verify-otp") {
+    if (global.otpStore?.[email] == otp) {
+      return res.json({ success: true, message: "OTP Verified!" });
+    } else {
+      return res.json({ success: false, message: "Invalid OTP" });
     }
   }
 
-  if (req.method === 'POST' && req.url === '/verify-otp') {
-    try {
-      const body = JSON.parse(req.body || '{}');
-      const { email, otp } = body;
-
-      if (!email || !otp) {
-        return res.json({ success: false, message: 'Email and OTP are required' }, 400);
-      }
-
-      const record = storedOTPs[email];
-      if (!record) {
-        return res.json({ success: false, message: 'OTP not found or expired' }, 404);
-      }
-
-      const { otp: storedOtp, createdAt } = record;
-
-      // Check expiry (5 minutes = 300000ms)
-      if (Date.now() - createdAt > 300000) {
-        delete storedOTPs[email];
-        return res.json({ success: false, message: 'OTP expired' }, 410);
-      }
-
-      if (otp === storedOtp) {
-        delete storedOTPs[email]; // remove OTP after successful verification
-        return res.json({ success: true, message: 'OTP verified successfully' });
-      } else {
-        return res.json({ success: false, message: 'Invalid OTP' }, 401);
-      }
-
-    } catch (err) {
-      log(err);
-      return res.json({ success: false, message: 'Error verifying OTP' }, 500);
-    }
-  }
-
-  return res.json({ success: false, message: 'Invalid route or method' }, 404);
+  res.json({ success: false, message: "Unknown action" });
 };
