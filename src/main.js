@@ -20,7 +20,7 @@ export async function main(context) {
       service: 'Outlook',
       auth: {
         user: process.env.OUTLOOK_EMAIL,      // e.g. yourname@outlook.com
-        pass: process.env.OUTLOOK_PASSWORD,   // your app password or actual password
+        pass: process.env.OUTLOOK_PASS,   // your app password or actual password
       }
     });
 
