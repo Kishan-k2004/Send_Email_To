@@ -21,7 +21,7 @@ const transporter = nodemailer.createTransport({
 
 const OTP_EXPIRATION_MINUTES = 5;
 
-// ✅ Send OTP
+// Send OTP
 app.post("/send-otp", (req, res) => {
   const { email } = req.body;
 
@@ -35,8 +35,13 @@ app.post("/send-otp", (req, res) => {
   const mailOptions = {
     from: process.env.OUTLOOK_USER,
     to: email,
-    subject: "Your OTP Code",
-    text: `Your OTP is: ${otp}. It will expire in ${OTP_EXPIRATION_MINUTES} minutes.`,
+    subject: "🎉 Welcome to Bloggify !",
+    html: `
+      <h2>Welcome!</h2>
+      <p>Thanks for signing up. Your One Time Password (OTP) is:</p>
+      <h3 style="color: #007bff;">${otp}</h3>
+      <p>Please use it within the next 5 minutes.</p>
+    `,
   };
 
   transporter.sendMail(mailOptions, (error, info) => {
@@ -49,7 +54,7 @@ app.post("/send-otp", (req, res) => {
   });
 });
 
-// ✅ Verify OTP
+// Verify OTP
 app.post("/verify-otp", (req, res) => {
   const { email, otp } = req.body;
 
