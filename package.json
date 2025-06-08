@@ -2,7 +2,6 @@
   "name": "mailsender",
   "version": "1.0.0",
   "main": "src/main.js",
-  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -11,6 +10,9 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
     "node-appwrite": "^10.0.0",
     "nodemailer": "^7.0.3"
   }
