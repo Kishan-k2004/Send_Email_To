@@ -7,7 +7,11 @@ const cors = require("cors");
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin : 'https://bloggify-one.vercel.app',
+  methods : ['GET','POST'],
+  credentials : true
+}));
 
 const otpStore = {}; // { email: { otp: "123456", expiresAt: timestamp } }
 
